@@ -544,14 +544,19 @@ def reset_user_progress(request):
     except UserProfile.DoesNotExist:
         return Response({'status': 'error', 'message': 'Profile not found'}, status=404)
     
+    
+    
 
 
 from .models import Notification
 from .serializers import NotificationSerializer
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
-    authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+        qs = Notification.objects.filter(user=self.request.user)
+        print("Fetched notifications for user:", self.request.user.username, "=", qs.count())
+        return qs.order_by('-created_at')

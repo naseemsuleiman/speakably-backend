@@ -69,15 +69,16 @@ class LessonSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-            
-        if hasattr(obj, 'user_lesson_progress'):
-            return any(p.is_completed for p in obj.user_lesson_progress)
-            
+
+        today = timezone.now().date()
+
         return LessonProgress.objects.filter(
             lesson=obj,
             user=request.user,
-            is_completed=True
+            is_completed=True,
+            completed_at__date=today
         ).exists()
+
 
     def get_is_unlocked(self, obj):
         request = self.context.get('request')
@@ -263,15 +264,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return getattr(obj.selected_language, 'flag', '🌐')  # Changed from icon to flag
     
     def get_progress(self, obj):
+        today = timezone.now().date()
         total_lessons = Lesson.objects.filter(unit__language=obj.selected_language).count()
         if total_lessons == 0:
             return 0
-        completed_lessons = LessonProgress.objects.filter(
+        completed_today = LessonProgress.objects.filter(
             user=obj.user,
+            lesson__unit__language=obj.selected_language,
             is_completed=True,
-            lesson__unit__language=obj.selected_language
+            completed_at__date=today
         ).count()
-        return int((completed_lessons / total_lessons) * 100) # Placeholder - replace with actual calculation # Default icon if missing
+        return int((completed_today / total_lessons) * 100)
 
     def get_daily_goal_progress(self, obj):
         today = timezone.now().date()

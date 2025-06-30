@@ -16,6 +16,12 @@ from .views import (
 )
 from .views import CustomAuthToken
 
+
+from django.http import JsonResponse
+
+def root_view(request):
+    return JsonResponse({"message": "Welcome to the API root."})
+
 # Language endpoints
 language_list = LanguageViewSet.as_view({
     'get': 'list',
@@ -63,6 +69,9 @@ profile_detail = UserProfileViewSet.as_view({
     'patch': 'partial_update',
     'delete': 'destroy'
 })
+
+
+
 profile_me = UserProfileViewSet.as_view({
     'get': 'me'
 })
@@ -75,6 +84,7 @@ notification_list = NotificationViewSet.as_view({
 })
 
 urlpatterns = [
+    path('', root_view), 
     # Language endpoints
     path('languages/', language_list, name='language-list'),
     path('languages/<int:pk>/', language_detail, name='language-detail'),
