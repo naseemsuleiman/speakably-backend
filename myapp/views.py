@@ -229,6 +229,8 @@ class LogoutView(generics.GenericAPIView):
             {"detail": "Successfully logged out."},
             status=status.HTTP_200_OK
         )
+
+
     
 # In views.py
 class UnitViewSet(viewsets.ModelViewSet):

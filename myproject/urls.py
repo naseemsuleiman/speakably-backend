@@ -20,7 +20,13 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 from django.conf import settings
 
+from django.http import JsonResponse
+
+def home(request):
+    return JsonResponse({"status": "ok", "message": "Speakably Backend is running!"})
+
 urlpatterns = [
+    path('', home),
     path('admin/', admin.site.urls),
     path('api/', include('myapp.urls')),
 ]
