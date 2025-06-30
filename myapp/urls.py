@@ -6,9 +6,15 @@ from .views import (
     UnitViewSet,
     UserProfileViewSet,
     RegisterView,
-    LoginView,
-    UnitDetailView
+    UnitDetailView,
+    UserProfileUpdateView,
+    ImageUploadView,
+    complete_lesson,
+    reset_user_progress,
+    LogoutView,
+    NotificationViewSet
 )
+from .views import CustomAuthToken
 
 # Language endpoints
 language_list = LanguageViewSet.as_view({
@@ -64,6 +70,10 @@ profile_preferences = UserProfileViewSet.as_view({
     'patch': 'update_preferences'
 })
 
+notification_list = NotificationViewSet.as_view({
+    'get': 'list'
+})
+
 urlpatterns = [
     # Language endpoints
     path('languages/', language_list, name='language-list'),
@@ -83,5 +93,11 @@ urlpatterns = [
     
     # Authentication endpoints
     path('register/', RegisterView.as_view(), name='register'),
-    path('login/', LoginView.as_view(), name='login'),
+    path('login/', CustomAuthToken.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('api/profile/', UserProfileUpdateView.as_view(), name='profile-update'),
+    path('upload-image/', ImageUploadView.as_view(), name='upload-image'),
+    path('lessons/<int:pk>/complete/', complete_lesson, name='complete-lesson'),
+    path('profiles/reset/', reset_user_progress),
+    path('notifications/', notification_list, name='notifications'),
 ]

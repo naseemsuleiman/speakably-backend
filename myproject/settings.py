@@ -80,18 +80,18 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-import dj_database_url 
- 
-DATABASES = { 
-   # the link here is the external link provided on postgresql web service db 
-   "default": dj_database_url.parse("postgresql://photogallery_5gof_user:qj330ToYOb7PxhIduxf0Tg1hQoGJAjDz@dpg-d0vbjcm3jp1c73e0dlog-a.oregon-postgres.render.com/photogallery_5gof") 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
+# import dj_database_url 
+ 
+# DATABASES = { 
+#    # the link here is the external link provided on postgresql web service db 
+#    "default": dj_database_url.parse("postgresql://photogallery_5gof_user:qj330ToYOb7PxhIduxf0Tg1hQoGJAjDz@dpg-d0vbjcm3jp1c73e0dlog-a.oregon-postgres.render.com/photogallery_5gof") 
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -140,12 +140,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-        
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
 }
 
 # CORS
@@ -173,3 +168,34 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Token Authentication Settings
+TOKEN_EXPIRED_AFTER_SECONDS = 86400  # 24 hours
+
+# Session Settings (if using session auth)
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True
+
+# CSRF Settings
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
+AUTH_TOKEN_MODEL = 'myapp.Token'
+AUTH_USER_MODEL = 'auth.User' 
+# Email Backend (for password reset)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
+
+
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+   
