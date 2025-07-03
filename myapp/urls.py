@@ -1,4 +1,5 @@
-# core/urls.py
+
+from django import views
 from django.urls import path
 from .views import (
     LanguageViewSet,
@@ -12,7 +13,29 @@ from .views import (
     complete_lesson,
     reset_user_progress,
     LogoutView,
-    NotificationViewSet
+    NotificationListView,
+    leaderboard_view,
+    my_languages,
+    send_community_message,
+    update_languages,
+    update_selected_language,
+    notification_settings,
+    update_notification_settings,
+    create_community,
+    create_post,
+    get_communities,
+    join_community,
+    get_user_communities,
+    get_community_messages,
+    get_community_members,
+    leave_community
+    
+)
+from .views import (
+    
+    get_community_posts,
+    
+    send_daily_reminders
 )
 from .views import CustomAuthToken
 
@@ -79,9 +102,6 @@ profile_preferences = UserProfileViewSet.as_view({
     'patch': 'update_preferences'
 })
 
-notification_list = NotificationViewSet.as_view({
-    'get': 'list'
-})
 
 urlpatterns = [
     path('', root_view), 
@@ -109,5 +129,29 @@ urlpatterns = [
     path('upload-image/', ImageUploadView.as_view(), name='upload-image'),
     path('lessons/<int:pk>/complete/', complete_lesson, name='complete-lesson'),
     path('profiles/reset/', reset_user_progress),
-    path('notifications/', notification_list, name='notifications'),
+    path('notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('community/posts/', get_community_posts, name='community-posts'),
+    
+    path('leaderboard/', leaderboard_view, name='leaderboard'),
+    path('notifications/send-reminders/', send_daily_reminders, name='send-reminders'),
+    path('my-languages/', my_languages, name='my_languages'),
+    path('profiles/update-languages/', update_languages, name='update-languages'),
+    path('profiles/update-selected-language/', update_selected_language, name='update-selected-language'),
+    path('profiles/notification-settings/', notification_settings, name='notification-settings'),
+    path('profiles/update-notification-settings/', update_notification_settings, name='update-notification-settings'),
+    path('community/posts/create/', create_post, name='create-post'),
+    path('community/create/', create_community, name='create-community'),
+    path('community/', get_communities, name='community-list'),
+    path('community/create/', create_community, name='create-community'),
+    path('community/<int:pk>/join/', join_community, name='join-community'),
+    path('community/user/', get_user_communities, name='user-communities'),
+    path('community/<int:pk>/messages/', get_community_messages, name='community-messages'),
+    path('community/<int:pk>/messages/send/', send_community_message, name='send-community-message'),
+    path('communities/<int:pk>/members/', get_community_members, name='community-members'),
+path('communities/<int:pk>/join/', join_community, name='join-community'),
+path('communities/<int:pk>/leave/', leave_community, name='leave-community'),
+path('communities/<int:pk>/messages/', get_community_messages, name='community-messages'),
+path('communities/<int:pk>/messages/send/', send_community_message, name='send-community-message'),
+
+
 ]

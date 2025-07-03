@@ -160,18 +160,59 @@ class Lesson(models.Model):
     def __str__(self):
         return f"{self.unit.title} - {self.title}"
     
+
+class UserLanguage(models.Model):
+    user = models.ForeignKey('UserProfile', on_delete=models.CASCADE)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    is_primary = models.BooleanField(default=False)
+    proficiency = models.CharField(max_length=20, default='beginner')
+
+    def __str__(self):
+      username = self.user.user.username if self.user and self.user.user else "Unknown"
+      language = self.language.name if self.language else "No Language"
+      return f"{username} - {language}"
+
+
+    
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    selected_language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True)
+
+    selected_language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='selected_by_users'  # ✅ resolves reverse accessor conflict
+    )
+
     proficiency_level = models.CharField(max_length=50, default='beginner')
     daily_goal = models.PositiveIntegerField(default=5)
-    daily_goal_completed = models.PositiveIntegerField(default=0)  # Add this
+    daily_goal_completed = models.PositiveIntegerField(default=0)
     current_streak = models.PositiveIntegerField(default=0)
     last_activity_date = models.DateField(default=timezone.now)
     last_streak_date = models.DateField(null=True, blank=True)
-    xp = models.PositiveIntegerField(default=0)  # Add this field
-    hearts = models.PositiveIntegerField(default=5)  # Add if needed
-    gems = models.PositiveIntegerField(default=0)  # Add if needed
+    xp = models.PositiveIntegerField(default=0)
+    hearts = models.PositiveIntegerField(default=5)
+    gems = models.PositiveIntegerField(default=0)
+    reminders_enabled = models.BooleanField(default=False)
+    daily_push = models.BooleanField(default=False)
+    email_notifications = models.BooleanField(default=False)
+    reminder_time = models.TimeField(null=True, blank=True)  # preferred time of day
+    reminders_enabled = models.BooleanField(default=False)
+    
+    daily_reminder = models.BooleanField(default=True)
+    weekly_summary = models.BooleanField(default=True)
+
+
+    learning_languages = models.ManyToManyField(
+        Language,
+        through='UserLanguage',
+        related_name='learned_by_users'  # ✅ avoids reverse clash
+    )
+
+    def __str__(self):
+        return self.user.username
+
+    
     
 
     def get_completed_lessons(self):
@@ -284,19 +325,90 @@ class LessonProgress(models.Model):
         unique_together = ('lesson', 'user')
         
     def __str__(self):
-        return f"{self.user.username} - {self.lesson.title}"
+      username = self.user.username if self.user else "Unknown"
+      lesson = self.lesson.title if self.lesson else "No Lesson"
+      return f"{username} - {lesson}"
+
     
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
 class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('reminder', 'Reminder'),
+        ('achievement', 'Achievement'),
+        ('message', 'Message'),
+    ]
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
     is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(default=timezone.now)
-    notification_type = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
     
+    class Meta:
+        ordering = ['-created_at']
+        
     def __str__(self):
-        return f"{self.user.username} - {self.title}"
+        return f"{self.title} - {self.user.username}"
+    
+class Community(models.Model):
+    name = models.CharField(max_length=200)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    members = models.ManyToManyField(User, related_name='communities')
+
+    def __str__(self):
+        return f"{self.name} ({self.language.name})"
+    
+
+class CommunityPost(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, null=True)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        user = self.user.username if self.user else "Unknown User"
+        community = self.community.name if self.community else "No Community"
+        return f"Post by {user} in {community}"
+
+
+    @property
+    def is_member(self):
+        # This will be used in the serializer
+        return False  # Will be set dynamically in the view
+
+    
+
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(CommunityPost, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class WeeklyProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    week_start = models.DateField()
+    xp_earned = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        unique_together = ('user', 'week_start')
+class CommunityMessage(models.Model):
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies')
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        language_name = self.community.language.name if self.community and self.community.language else "No Language"
+        return f"Message by {self.user.username} in {self.community.name} ({language_name})"

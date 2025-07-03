@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'myapp',
+    'django_apscheduler',
+    'myapp.apps.MyappConfig', 
+    
     
 ]
 
@@ -84,6 +86,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,  # ⏰ 20 seconds wait before throwing "locked"
+        }
     }
 }
 # import dj_database_url 
@@ -122,7 +127,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
+TIME_ZONE = 'Africa/Nairobi'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -197,5 +202,13 @@ import os
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'naseemsuleiman27@gmail.com'
+EMAIL_HOST_PASSWORD = 'rofb htfp djcu vkkn'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
    

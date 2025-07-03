@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .models import Language, Lesson, UserProfile, Unit, Exercise, LessonProgress
+from .models import Community, Language, Lesson, UserProfile, Unit, Exercise, LessonProgress
 
 
 
@@ -227,22 +227,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
     )
     selected_language_name = serializers.SerializerMethodField()
     selected_language_icon = serializers.SerializerMethodField()
-    progress = serializers.SerializerMethodField()  # Add this
+    progress = serializers.SerializerMethodField()
     daily_goal_target = serializers.IntegerField(source='daily_goal')
     daily_goal_completed = serializers.SerializerMethodField()
     daily_goal_progress = serializers.SerializerMethodField()
     current_streak = serializers.IntegerField(read_only=True)
-    
+    learning_languages = LanguageSerializer(many=True, read_only=True)
+
+    # ✅ Add these fields
+    reminder_time = serializers.TimeField(required=False)
+    daily_reminder = serializers.BooleanField(required=False)
+    weekly_summary = serializers.BooleanField(required=False)
 
     class Meta:
         model = UserProfile
         fields = [
             'id', 'user', 'selected_language', 
             'selected_language_name', 'selected_language_icon',
-            'proficiency_level', 'progress',  # Add progress
+            'proficiency_level', 'progress',
             'daily_goal_target', 'daily_goal_completed', 'daily_goal_progress',
-            'current_streak'
+            'current_streak','selected_language', 'selected_language_name', 
+            'learning_languages', 'reminder_time', 'daily_reminder', 'weekly_summary'
         ]
+
 
     def get_user(self, obj):
         user = obj.user
@@ -337,7 +344,7 @@ class LoginSerializer(serializers.Serializer):
     
 
 
-from .models import Notification
+from .models import Notification, CommunityPost, Comment, WeeklyProgress, CommunityMessage
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -346,3 +353,78 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     
 
+class CommunityPostSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    language = LanguageSerializer(read_only=True)
+    
+    class Meta:
+        model = CommunityPost
+        fields = ['id', 'user', 'language', 'content', 'created_at']
+    
+    def get_user(self, obj):
+        return {
+            'id': obj.user.id,
+            'username': obj.user.username,
+            'avatar': None  # Add if you have avatars
+        }
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'content', 'created_at']
+    
+    def get_user(self, obj):
+        return {
+            'id': obj.user.id,
+            'username': obj.user.username
+        }
+
+class WeeklyProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WeeklyProgress
+        fields = ['week_start', 'xp_earned']
+
+class CommunitySerializer(serializers.ModelSerializer):
+    is_member = serializers.SerializerMethodField()
+    member_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Community
+        fields = ['id', 'name', 'language', 'created_by', 'created_at', 'member_count', 'is_member']
+    
+    def get_is_member(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.members.filter(id=request.user.id).exists()
+        return False
+    
+    def get_member_count(self, obj):
+        return obj.members.count()
+    
+class CommunityMessageSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    reply_to = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CommunityMessage
+        fields = ['id', 'user', 'content', 'created_at', 'reply_to']
+    
+    def get_user(self, obj):
+        return {
+            'id': obj.user.id,
+            'username': obj.user.username
+        }
+    
+    def get_reply_to(self, obj):
+        if obj.reply_to:
+            return {
+                'id': obj.reply_to.id,
+                'content': obj.reply_to.content,
+                'user': {
+                    'id': obj.reply_to.user.id,
+                    'username': obj.reply_to.user.username
+                }
+            }
+        return None
